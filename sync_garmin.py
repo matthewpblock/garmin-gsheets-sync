@@ -69,16 +69,16 @@ def main():
         return
     
     # Filter for running activities only
-    running_activities = [
-        activity for activity in activities 
-        if activity.get('activityType', {}).get('typeKey', '').lower() in ['running', 'treadmill_running', 'trail_running']
-    ]
+    # running_activities = [
+    #    activity for activity in activities 
+    #    if activity.get('activityType', {}).get('typeKey', '').lower() in ['running', 'treadmill_running', 'trail_running']
+    # ]
     
-    print(f"Found {len(running_activities)} running activities")
+    # print(f"Found {len(running_activities)} running activities")
     
-    if not running_activities:
-        print("No running activities found in recent data")
-        return
+    # if not running_activities:
+    #    print("No running activities found in recent data")
+    #    return
     
     # Connect to Google Sheets
     print("Connecting to Google Sheets...")
@@ -113,7 +113,7 @@ def main():
     
     # Process each running activity
     new_entries = 0
-    for activity in running_activities:
+    for activity in activities:
         try:
             # Parse activity date
             activity_date = activity.get('startTimeLocal', '')[:10]  # Get YYYY-MM-DD
