@@ -137,6 +137,27 @@ def main():
             elevation_gain = round(activity.get('elevationGain', 0), 1) if activity.get('elevationGain') else 0
             activity_type = activity.get('activityType', {}).get('typeKey', 'running')
             
+            # 1. Fetch the detailed HR zone breakdown for the activity
+            activity_id = activity['activityId']
+            try:
+                hr_zones = garmin.get_activity_hr_in_time_zones(activity_id)
+            except Exception:
+                hr_zones = []
+
+            # 2. Extract seconds for each zone (0-4 in the list correspond to Zones 1-5)
+            z1_sec = hr_zones[0].get('secsInZone', 0) if hr_zones and len(hr_zones) > 0 else 0
+            z2_sec = hr_zones[1].get('secsInZone', 0) if hr_zones and len(hr_zones) > 1 else 0
+            z3_sec = hr_zones[2].get('secsInZone', 0) if hr_zones and len(hr_zones) > 2 else 0
+            z4_sec = hr_zones[3].get('secsInZone', 0) if hr_zones and len(hr_zones) > 3 else 0
+            z5_sec = hr_zones[4].get('secsInZone', 0) if hr_zones and len(hr_zones) > 4 else 0
+
+            # 3. Convert to minutes
+            z1_min = round(z1_sec / 60, 2)
+            z2_min = round(z2_sec / 60, 2)
+            z3_min = round(z3_sec / 60, 2)
+            z4_min = round(z4_sec / 60, 2)
+            z5_min = round(z5_sec / 60, 2)
+
             # Prepare row
             row = [
                 activity_date,
@@ -149,7 +170,8 @@ def main():
                 calories,
                 avg_cadence,
                 elevation_gain,
-                activity_type
+                activity_type,
+                z1_min, z2_min, z3_min, z4_min, z5_min
             ]
             
             # Append to sheet
