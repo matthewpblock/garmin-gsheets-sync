@@ -102,6 +102,16 @@ def main():
     try:
         existing_data = sheet.get_all_values()
         existing_dates = set()
+        
+        # Define headers matching the row structure
+        headers = ['Date', 'Activity Name', 'Distance (km)', 'Duration (min)', 'Pace (min/km)', 
+                   'Avg HR', 'Max HR', 'Calories', 'Avg Cadence', 'Elevation Gain (m)', 
+                   'Type', 'Z1 (min)', 'Z2 (min)', 'Z3 (min)', 'Z4 (min)', 'Z5 (min)']
+
+        if not existing_data:
+            sheet.append_row(headers)
+            print("✅ Created new sheet with headers")
+
         if len(existing_data) > 1:  # If there's data beyond headers
             for row in existing_data[1:]:  # Skip header row
                 if row and row[0]:  # If date column exists
@@ -115,6 +125,16 @@ def main():
     new_entries = 0
     for activity in activities:
         try:
+            # Filter allowed sports
+            allowed_sports = [
+                'running', 'treadmill_running', 'trail_running',
+                'cycling', 'road_biking', 'mountain_biking', 'indoor_cycling', 'virtual_ride',
+                'swimming', 'open_water_swimming', 'lap_swimming',
+                'surfing'
+            ]
+            if activity.get('activityType', {}).get('typeKey') not in allowed_sports:
+                continue
+
             # Parse activity date
             activity_date = activity.get('startTimeLocal', '')[:10]  # Get YYYY-MM-DD
             
