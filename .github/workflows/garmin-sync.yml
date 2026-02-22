@@ -16,7 +16,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.12'  # Match your local version for token compatibility
+      
+      - name: Restore Garmin Session
+        run: |
+          mkdir -p ~/.garth
+          echo "${{ secrets.GARMIN_TOKENS_BASE64 }}" | base64 --decode > garmin_tokens.zip
+          unzip garmin_tokens.zip -d ~
       
       - name: Install dependencies
         run: |
@@ -24,8 +30,6 @@ jobs:
       
       - name: Run sync script
         env:
-          GARMIN_EMAIL: ${{ secrets.GARMIN_EMAIL }}
-          GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           SHEET_ID: ${{ secrets.SHEET_ID }}
         run: python sync_garmin.py
