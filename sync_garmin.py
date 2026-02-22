@@ -6,14 +6,18 @@ import gspread
 from datetime import datetime, timedelta
 import garth
 
-# Resume the session from the folder the GitHub Action just created
+# 1. Define the token path
+token_path = os.path.expanduser("~/.garth")
+
+# 2. Resume the session FIRST
 try:
-    garth.resume("~/.garth")
-    print("Session resumed successfully via tokens.")
+    if os.path.exists(token_path):
+        garth.resume(token_path)
+        print("✅ Garth session resumed from ~/.garth")
+    else:
+        print("❌ Token path not found!")
 except Exception as e:
-    print(f"Failed to resume session: {e}")
-    # You could add a fallback login here if you really wanted to, 
-    # but the token is the primary goal now.
+    print(f"❌ Failed to resume Garth session: {e}")
 
 # Load environment variables from .env file if it exists (for local testing)
 if os.path.exists('.env'):
@@ -51,22 +55,20 @@ def main():
         with open('credentials.json', 'r') as f:
             google_creds_json = f.read()
     
-    if not all([garmin_email, garmin_password, google_creds_json, sheet_id]):
+    if not all([google_creds_json, sheet_id]):
         print("❌ Missing required environment variables")
-        print(f"   GARMIN_EMAIL: {'✓' if garmin_email else '✗'}")
-        print(f"   GARMIN_PASSWORD: {'✓' if garmin_password else '✗'}")
         print(f"   GOOGLE_CREDENTIALS: {'✓' if google_creds_json else '✗'}")
         print(f"   SHEET_ID: {'✓' if sheet_id else '✗'}")
         return
     
-    # Connect to Garmin
-    print("Connecting to Garmin...")
+    # 3. Initialize Garmin Client WITHOUT email/password to force use of Garth session
     try:
-        garmin = Garmin(garmin_email, garmin_password)
-        garmin.login()
-        print("✅ Connected to Garmin")
+        # We pass None/Empty to prevent the library from trying a fresh login
+        garmin = Garmin() 
+        garmin.login() # This will now use the resumed Garth session automatically
+        print("✅ Garmin client logged in via session tokens")
     except Exception as e:
-        print(f"❌ Failed to connect to Garmin: {e}")
+        print(f"❌ Garmin login failed: {e}")
         return
     
     # Get recent activities (last 7 days)
