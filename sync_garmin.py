@@ -124,13 +124,19 @@ def main():
         else:
             sheet_headers = existing_data[0]
             
-            # Check for missing headers and update sheet if found
-            missing_headers = [h for h in default_headers if h not in sheet_headers]
-            if missing_headers:
-                print(f"⚠️ Found missing headers: {missing_headers}")
-                sheet_headers.extend(missing_headers)
+            # If header row is empty or invalid (e.g. cleared sheet), overwrite it
+            if not any(sheet_headers):
+                print("⚠️ Empty header row found. Overwriting with default headers.")
+                sheet_headers = default_headers
                 sheet.update(range_name='A1', values=[sheet_headers])
-                print("✅ Updated sheet headers")
+            else:
+                # Check for missing headers and update sheet if found
+                missing_headers = [h for h in default_headers if h not in sheet_headers]
+                if missing_headers:
+                    print(f"⚠️ Found missing headers: {missing_headers}")
+                    sheet_headers.extend(missing_headers)
+                    sheet.update(range_name='A1', values=[sheet_headers])
+                    print("✅ Updated sheet headers")
 
         if len(existing_data) > 1:  # If there's data beyond headers
             for row in existing_data[1:]:  # Skip header row
