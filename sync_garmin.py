@@ -114,7 +114,8 @@ def main():
         # Define default headers
         default_headers = ['Date', 'Activity Name', 'Distance (km)', 'Duration (min)', 'Pace (min/km)', 
                            'Avg HR', 'Max HR', 'Calories', 'Avg Cadence', 'Elevation Gain (m)', 
-                           'Type', 'Z1 (min)', 'Z2 (min)', 'Z3 (min)', 'Z4 (min)', 'Z5 (min)']
+                           'Type', 'Z1 (min)', 'Z2 (min)', 'Z3 (min)', 'Z4 (min)', 'Z5 (min)',
+                           'VO2 Max', 'Avg Stress', 'Max Stress', 'Start Stress', 'End Stress', 'Stress Diff']
 
         if not existing_data:
             sheet.append_row(default_headers)
@@ -122,6 +123,14 @@ def main():
             sheet_headers = default_headers
         else:
             sheet_headers = existing_data[0]
+            
+            # Check for missing headers and update sheet if found
+            missing_headers = [h for h in default_headers if h not in sheet_headers]
+            if missing_headers:
+                print(f"⚠️ Found missing headers: {missing_headers}")
+                sheet_headers.extend(missing_headers)
+                sheet.update(range_name='A1', values=[sheet_headers])
+                print("✅ Updated sheet headers")
 
         if len(existing_data) > 1:  # If there's data beyond headers
             for row in existing_data[1:]:  # Skip header row
@@ -158,19 +167,12 @@ def main():
             elevation_gain = round(activity.get('elevationGain', 0), 1) if activity.get('elevationGain') else 0
             activity_type = activity.get('activityType', {}).get('typeKey', 'running')
             
-            # 1. Fetch the detailed HR zone breakdown for the activity
-            activity_id = activity['activityId']
-            try:
-                hr_zones = garmin_client.get_activity_hr_in_time_zones(activity_id)
-            except Exception:
-                hr_zones = []
-
-            # 2. Extract seconds for each zone (0-4 in the list correspond to Zones 1-5)
-            z1_sec = hr_zones[0].get('secsInZone', 0) if hr_zones and len(hr_zones) > 0 else 0
-            z2_sec = hr_zones[1].get('secsInZone', 0) if hr_zones and len(hr_zones) > 1 else 0
-            z3_sec = hr_zones[2].get('secsInZone', 0) if hr_zones and len(hr_zones) > 2 else 0
-            z4_sec = hr_zones[3].get('secsInZone', 0) if hr_zones and len(hr_zones) > 3 else 0
-            z5_sec = hr_zones[4].get('secsInZone', 0) if hr_zones and len(hr_zones) > 4 else 0
+            # 1. Extract seconds for each zone directly from activity data
+            z1_sec = activity.get('hrTimeInZone_1') or 0
+            z2_sec = activity.get('hrTimeInZone_2') or 0
+            z3_sec = activity.get('hrTimeInZone_3') or 0
+            z4_sec = activity.get('hrTimeInZone_4') or 0
+            z5_sec = activity.get('hrTimeInZone_5') or 0
 
             # 3. Convert to minutes
             z1_min = round(z1_sec / 60, 2)
@@ -198,7 +200,15 @@ def main():
                 "Z3 (min)": z3_min,
                 "Z4 (min)": z4_min,
                 "Z5 (min)": z5_min,
-                "Waves": activity.get('laps') if activity_type == 'surfing' else 0
+                "Waves": activity.get('laps') if activity_type == 'surfing' else 0,
+                "VO2 Max": activity.get('vO2MaxValue'),
+                "Avg Stress": activity.get('avgStress'),
+                "Max Stress": activity.get('maxStress'),
+                "Start Stress": activity.get('startStress'),
+                "End Stress": activity.get('endStress'),
+                "Stress Diff": activity.get('differenceStress'),
+                "Activity ID": activity.get('activityId'),
+                "Start Time GMT": activity.get('startTimeGMT')
             }
 
             # Build the final row based ONLY on what headers exist in the sheet
