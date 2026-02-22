@@ -115,7 +115,8 @@ def main():
         default_headers = ['Date', 'Activity Name', 'Distance (km)', 'Duration (min)', 'Pace (min/km)', 
                            'Avg HR', 'Max HR', 'Calories', 'Avg Cadence', 'Elevation Gain (m)', 
                            'Type', 'Z1 (min)', 'Z2 (min)', 'Z3 (min)', 'Z4 (min)', 'Z5 (min)',
-                           'VO2 Max', 'Avg Stress', 'Max Stress', 'Start Stress', 'End Stress', 'Stress Diff']
+                           'VO2 Max', 'Avg Stress', 'Max Stress', 'Start Stress', 'End Stress', 'Stress Diff',
+                           'Activity ID']
 
         # Check if sheet is empty or has empty header row
         if not existing_data or (len(existing_data) > 0 and not any(existing_data[0])):
