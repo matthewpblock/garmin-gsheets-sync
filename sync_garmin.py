@@ -49,7 +49,7 @@ def format_pace(distance_meters, duration_seconds):
     return round(pace_seconds / 60, 2)  # Convert to min/km
 
 def main():
-    print("Starting Garmin running activities sync...")
+    print("Starting Garmin activities sync...")
     
     google_creds_json = os.environ.get('GOOGLE_CREDENTIALS')
     sheet_id = os.environ.get('SHEET_ID')  # Add sheet ID from environment
@@ -132,16 +132,6 @@ def main():
     new_entries = 0
     for activity in activities:
         try:
-            # Filter allowed sports
-            allowed_sports = [
-                'running', 'treadmill_running', 'trail_running',
-                'cycling', 'road_biking', 'mountain_biking', 'indoor_cycling', 'virtual_ride',
-                'swimming', 'open_water_swimming', 'lap_swimming',
-                'surfing'
-            ]
-            if activity.get('activityType', {}).get('typeKey') not in allowed_sports:
-                continue
-
             # Parse activity date
             activity_date = activity.get('startTimeLocal', '')[:10]  # Get YYYY-MM-DD
             
@@ -211,7 +201,7 @@ def main():
             continue
     
     if new_entries > 0:
-        print(f"\n🎉 Successfully added {new_entries} new running activities!")
+        print(f"\n🎉 Successfully added {new_entries} new activities!")
     else:
         print("\n✓ No new activities to add")
 
