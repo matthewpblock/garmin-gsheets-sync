@@ -9,15 +9,23 @@ import garth
 # 1. Define the token path
 token_path = os.path.expanduser("~/.garth")
 
-# 2. Resume the session FIRST
 try:
-    if os.path.exists(token_path):
-        garth.resume(token_path)
-        print("✅ Garth session resumed from ~/.garth")
-    else:
-        print("❌ Token path not found!")
+    # 1. Load the tokens into the garth client
+    garth.resume(token_path)
+    print("✅ Garth session resumed.")
+    
+    # 2. Initialize Garmin without credentials
+    # This forces the library to use the already-resumed garth session
+    client = Garmin()
+    client.garth = garth.client
+    client.display_name = garth.client.username
+    
+    # 3. Test the connection
+    print(f"✅ Logged in as: {client.display_name}")
+
 except Exception as e:
-    print(f"❌ Failed to resume Garth session: {e}")
+    print(f"❌ Connection failed: {e}")
+    exit(1) # Stop the script if login fails
 
 # Load environment variables from .env file if it exists (for local testing)
 if os.path.exists('.env'):
@@ -43,9 +51,6 @@ def format_pace(distance_meters, duration_seconds):
 def main():
     print("Starting Garmin running activities sync...")
     
-    # Get credentials from environment variables
-    garmin_email = os.environ.get('GARMIN_EMAIL')
-    garmin_password = os.environ.get('GARMIN_PASSWORD')
     google_creds_json = os.environ.get('GOOGLE_CREDENTIALS')
     sheet_id = os.environ.get('SHEET_ID')  # Add sheet ID from environment
     
@@ -61,20 +66,10 @@ def main():
         print(f"   SHEET_ID: {'✓' if sheet_id else '✗'}")
         return
     
-    # 3. Initialize Garmin Client WITHOUT email/password to force use of Garth session
-    try:
-        # We pass None/Empty to prevent the library from trying a fresh login
-        garmin = Garmin() 
-        garmin.login() # This will now use the resumed Garth session automatically
-        print("✅ Garmin client logged in via session tokens")
-    except Exception as e:
-        print(f"❌ Garmin login failed: {e}")
-        return
-    
     # Get recent activities (last 7 days)
     print("Fetching recent activities...")
     try:
-        activities = garmin.get_activities(0, 20)  # Get last 20 activities
+        activities = client.get_activities(0, 20)  # Get last 20 activities
         print(f"Found {len(activities)} total activities")
     except Exception as e:
         print(f"❌ Failed to fetch activities: {e}")
@@ -172,7 +167,7 @@ def main():
             # 1. Fetch the detailed HR zone breakdown for the activity
             activity_id = activity['activityId']
             try:
-                hr_zones = garmin.get_activity_hr_in_time_zones(activity_id)
+                hr_zones = client.get_activity_hr_in_time_zones(activity_id)
             except Exception:
                 hr_zones = []
 
