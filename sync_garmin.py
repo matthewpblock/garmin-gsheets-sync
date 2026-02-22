@@ -211,7 +211,7 @@ def main():
                 "Start Stress": activity.get('startStress'),
                 "End Stress": activity.get('endStress'),
                 "Stress Diff": activity.get('differenceStress'),
-                "Activity ID": activity.get('activityId'),
+                "Activity ID": str(activity.get('activityId') or ''),
                 "Start Time GMT": activity.get('startTimeGMT')
             }
 
