@@ -66,10 +66,10 @@ def main():
         print(f"   SHEET_ID: {'✓' if sheet_id else '✗'}")
         return
     
-    # Get recent activities (last 7 days)
+    # Get recent activities (last 50 activities to ensure no gaps)
     print("Fetching recent activities...")
     try:
-        activities = garmin_client.get_activities(0, 20)  # Get last 20 activities
+        activities = garmin_client.get_activities(0, 50)
         print(f"Found {len(activities)} total activities")
     except Exception as e:
         print(f"❌ Failed to fetch activities: {e}")
