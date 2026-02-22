@@ -23,7 +23,7 @@ jobs:
           mkdir -p ~/.garth
           echo "${{ secrets.GARMIN_TOKENS_BASE64 }}" | base64 --decode > garmin_tokens.zip
           # Junk the paths (-j) to ignore the Windows folder structure
-          unzip -j garmin_tokens.zip -d ~/.garth/
+          unzip -j garmin_tokens.zip -d ~/.garth/ || true
           # List the files to verify they are in the right spot
           ls ~/.garth
       
