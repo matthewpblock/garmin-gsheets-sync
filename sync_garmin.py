@@ -109,15 +109,19 @@ def main():
     try:
         existing_data = sheet.get_all_values()
         existing_dates = set()
-        
-        # Define headers matching the row structure
-        headers = ['Date', 'Activity Name', 'Distance (km)', 'Duration (min)', 'Pace (min/km)', 
-                   'Avg HR', 'Max HR', 'Calories', 'Avg Cadence', 'Elevation Gain (m)', 
-                   'Type', 'Z1 (min)', 'Z2 (min)', 'Z3 (min)', 'Z4 (min)', 'Z5 (min)']
+        sheet_headers = []
+
+        # Define default headers
+        default_headers = ['Date', 'Activity Name', 'Distance (km)', 'Duration (min)', 'Pace (min/km)', 
+                           'Avg HR', 'Max HR', 'Calories', 'Avg Cadence', 'Elevation Gain (m)', 
+                           'Type', 'Z1 (min)', 'Z2 (min)', 'Z3 (min)', 'Z4 (min)', 'Z5 (min)']
 
         if not existing_data:
-            sheet.append_row(headers)
+            sheet.append_row(default_headers)
             print("✅ Created new sheet with headers")
+            sheet_headers = default_headers
+        else:
+            sheet_headers = existing_data[0]
 
         if len(existing_data) > 1:  # If there's data beyond headers
             for row in existing_data[1:]:  # Skip header row
@@ -125,8 +129,8 @@ def main():
                     existing_dates.add(row[0])
         print(f"Found {len(existing_dates)} existing entries")
     except Exception as e:
-        print(f"Warning: Could not check existing data: {e}")
-        existing_dates = set()
+        print(f"❌ Failed to read sheet data: {e}")
+        return
     
     # Process each running activity
     new_entries = 0
@@ -175,21 +179,30 @@ def main():
             z4_min = round(z4_sec / 60, 2)
             z5_min = round(z5_sec / 60, 2)
 
-            # Prepare row
-            row = [
-                activity_date,
-                activity_name,
-                distance_km,
-                duration_min,
-                avg_pace,
-                avg_hr,
-                max_hr,
-                calories,
-                avg_cadence,
-                elevation_gain,
-                activity_type,
-                z1_min, z2_min, z3_min, z4_min, z5_min
-            ]
+            # Create a "Dictionary" of your Garmin data
+            activity_data = {
+                "Date": activity_date,
+                "Activity Name": activity_name,
+                "Distance (km)": distance_km,
+                "Duration (min)": duration_min,
+                "Pace (min/km)": avg_pace,
+                "Avg HR": avg_hr,
+                "Max HR": max_hr,
+                "Calories": calories,
+                "Avg Cadence": avg_cadence,
+                "Elevation Gain (m)": elevation_gain,
+                "Type": activity_type,
+                "Activity Type": activity_type,
+                "Z1 (min)": z1_min,
+                "Z2 (min)": z2_min,
+                "Z3 (min)": z3_min,
+                "Z4 (min)": z4_min,
+                "Z5 (min)": z5_min,
+                "Waves": activity.get('laps') if activity_type == 'surfing' else 0
+            }
+
+            # Build the final row based ONLY on what headers exist in the sheet
+            row = [activity_data.get(header, "") for header in sheet_headers]
             
             # Append to sheet
             sheet.append_row(row)
