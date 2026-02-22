@@ -22,7 +22,10 @@ jobs:
         run: |
           mkdir -p ~/.garth
           echo "${{ secrets.GARMIN_TOKENS_BASE64 }}" | base64 --decode > garmin_tokens.zip
-          unzip garmin_tokens.zip -d ~
+          unzip -o garmin_tokens.zip -d /tmp/tokens
+          # Move files directly into ~/.garth to ensure no nesting
+          cp -r /tmp/tokens/.garth/* ~/.garth/ || cp -r /tmp/tokens/* ~/.garth/
+          ls -R ~/.garth  # This helps us see in the logs if files are actually there
       
       - name: Install dependencies
         run: |
