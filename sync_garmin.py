@@ -4,6 +4,16 @@ from garminconnect import Garmin
 from google.oauth2.service_account import Credentials
 import gspread
 from datetime import datetime, timedelta
+import garth
+
+# Resume the session from the folder the GitHub Action just created
+try:
+    garth.resume("~/.garth")
+    print("Session resumed successfully via tokens.")
+except Exception as e:
+    print(f"Failed to resume session: {e}")
+    # You could add a fallback login here if you really wanted to, 
+    # but the token is the primary goal now.
 
 # Load environment variables from .env file if it exists (for local testing)
 if os.path.exists('.env'):
