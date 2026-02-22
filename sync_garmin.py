@@ -16,12 +16,12 @@ try:
     
     # 2. Initialize Garmin without credentials
     # This forces the library to use the already-resumed garth session
-    client = Garmin()
-    client.garth = garth.client
-    client.display_name = garth.client.username
+    garmin_client = Garmin()
+    garmin_client.garth = garth.client
+    garmin_client.display_name = garth.client.username
     
     # 3. Test the connection
-    print(f"✅ Logged in as: {client.display_name}")
+    print(f"✅ Logged in as: {garmin_client.display_name}")
 
 except Exception as e:
     print(f"❌ Connection failed: {e}")
@@ -69,7 +69,7 @@ def main():
     # Get recent activities (last 7 days)
     print("Fetching recent activities...")
     try:
-        activities = client.get_activities(0, 20)  # Get last 20 activities
+        activities = garmin_client.get_activities(0, 20)  # Get last 20 activities
         print(f"Found {len(activities)} total activities")
     except Exception as e:
         print(f"❌ Failed to fetch activities: {e}")
@@ -167,7 +167,7 @@ def main():
             # 1. Fetch the detailed HR zone breakdown for the activity
             activity_id = activity['activityId']
             try:
-                hr_zones = client.get_activity_hr_in_time_zones(activity_id)
+                hr_zones = garmin_client.get_activity_hr_in_time_zones(activity_id)
             except Exception:
                 hr_zones = []
 
