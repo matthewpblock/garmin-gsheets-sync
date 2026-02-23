@@ -11,7 +11,7 @@ Automatically syncs Garmin Connect activities and daily metrics to Google Sheets
     *   Heart Rate (Avg, Max) & HR Zones (1-5)
     *   VO2 Max & Stress Levels
     *   Calories, Cadence, Elevation
-*   **Smart Sync:** Avoids duplicates by checking existing dates
+*   **Smart Sync:** Avoids duplicates by checking existing Activity IDs
 *   **Automation:** Runs automatically every day
 
 # Google Sheet Setup
