@@ -100,6 +100,17 @@ def main():
         )
         client = gspread.authorize(creds)
         sheet = client.open_by_key(sheet_id).sheet1
+        
+        # Open the spreadsheet
+        spreadsheet = client.open_by_key(sheet_id)
+        sheet = spreadsheet.sheet1
+        
+        # Try to open "Daily Metrics" tab, create if missing
+        try:
+            daily_sheet = spreadsheet.worksheet("Daily Metrics")
+        except gspread.WorksheetNotFound:
+            daily_sheet = spreadsheet.add_worksheet(title="Daily Metrics", rows=1000, cols=20)
+            
         print("✅ Connected to Google Sheets")
     except Exception as e:
         print(f"❌ Failed to connect to Google Sheets: {e}")
@@ -231,6 +242,64 @@ def main():
         print(f"\n🎉 Successfully added {new_entries} new activities!")
     else:
         print("\n✓ No new activities to add")
+        
+    # ---------------------------------------------------------
+    # SYNC DAILY METRICS (RHR, HRV, Steps, Sleep)
+    # ---------------------------------------------------------
+    print("\nStarting Daily Metrics sync...")
+    try:
+        daily_headers = ['Date', 'Resting HR', 'HRV (ms)', 'Max Stress', 'Avg Stress', 'Total Steps', 'Sleep Score', 'Sleep Duration (hr)']
+        daily_data = daily_sheet.get_all_values()
+        
+        # Initialize headers if empty
+        if not daily_data:
+            daily_sheet.append_row(daily_headers)
+            daily_existing_dates = set()
+        else:
+            # Check if headers match, update if needed (simplified for now)
+            if daily_data[0] != daily_headers:
+                # For now, just ensure row 1 is correct if it's a new sheet
+                pass
+            daily_existing_dates = set(row[0] for row in daily_data[1:] if row)
+
+        # Sync last 14 days (excluding today to ensure data is complete)
+        today = datetime.now().date()
+        days_to_sync = [(today - timedelta(days=i)).isoformat() for i in range(1, 15)]
+        
+        new_daily_entries = 0
+        for date_str in reversed(days_to_sync): # Process oldest to newest
+            if date_str in daily_existing_dates:
+                continue
+                
+            try:
+                # Fetch data
+                summary = garmin_client.get_user_summary(date_str)
+                hrv_data = garmin_client.get_hrv_status(date_str)
+                
+                if not summary:
+                    print(f"   No summary data for {date_str}")
+                    continue
+
+                row_data = [
+                    date_str,
+                    summary.get('restingHeartRate', ''),
+                    hrv_data.get('lastNightAvg', '') if hrv_data else '',
+                    summary.get('maxStressLevel', ''),
+                    summary.get('averageStressLevel', ''),
+                    summary.get('totalSteps', ''),
+                    summary.get('sleepScore', ''),
+                    round(summary.get('sleepDuration', 0) / 3600, 2) if summary.get('sleepDuration') else ''
+                ]
+                
+                daily_sheet.append_row(row_data)
+                print(f"✅ Added Daily Stats: {date_str}")
+                new_daily_entries += 1
+                
+            except Exception as e:
+                print(f"❌ Failed to fetch daily stats for {date_str}: {e}")
+
+    except Exception as e:
+        print(f"❌ Daily Metrics Sync Failed: {e}")
 
 if __name__ == "__main__":
     main()

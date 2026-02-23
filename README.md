@@ -1,140 +1,80 @@
+# 🏃🏽‍♂️ Garmin Data to Google Sheets Sync
 
-# 🏃🏽‍♂️ Garmin Run Data to Google Sheets Sync README
+Automatically syncs Garmin Connect activities and daily metrics to Google Sheets. Runs daily via GitHub Actions.
 
-Automatically syncs Garmin Connect Running data to Google Sheets, runs daily.
+# What this project does
 
-# What this project does?
+*   **Activities:** Fetches your last 50 activities (Running, Cycling, Swimming, etc.)
+*   **Daily Metrics:** Syncs Resting HR, HRV, Stress, Steps, and Sleep data
+*   **Rich Data:** Extracts detailed metrics including:
+    *   Distance, Duration, Pace
+    *   Heart Rate (Avg, Max) & HR Zones (1-5)
+    *   VO2 Max & Stress Levels
+    *   Calories, Cadence, Elevation
+*   **Smart Sync:** Avoids duplicates by checking existing dates
+*   **Automation:** Runs automatically every day
 
-* Fetches your last 20 activities from Garmin Connect
-* Filters for running activities only (including treadmill and trail running)
-* Extracts key running metrics:
+# Google Sheet Setup
 
-    - Distance in kilometers
-    - Duration in minutes
-    - Average pace (min/km)
-    - Average and max heart rate
-    - Calories burned
-    - Average cadence (steps per minute)
-    - Elevation gain
+1.  Create a new Google Sheet.
+2.  The script will automatically create headers if they don't exist.
+3.  It uses the first tab for **Activities** and creates/uses a "Daily Metrics" tab for daily stats.
 
-* Avoids duplicates by checking existing dates in your sheet
-* Appends new runs to your Google Sheet
-* Runs daily, automatically
+# Setup Instructions
 
-# Want to sync more activities? 
-Change line:
-```
-activities = garmin.get_activities(0, 20)  # Increase this number
-```
-# Google Sheet Instructions
+### 1. Google Cloud Credentials
+*   Go to [Google Cloud Console](https://console.cloud.google.com/).
+*   Create a project and enable **Google Sheets API** and **Google Drive API**.
+*   Create a **Service Account** (IAM & Admin > Service Accounts).
+*   Create a JSON Key for the service account and download it.
+*   **Share your Google Sheet** with the service account email (give "Editor" access).
 
-* Create Google Sheet
-* Go to Google Sheets
-* Create a new sheet called "Garmin Data"
-* Add headers in row 1 (copy/paste below)
+### 2. Generate Garmin Tokens
+This project uses `garth` for authentication, which requires a one-time login to generate session tokens.
+
+1.  Locally, install garth: `pip install garth`
+2.  Run this Python snippet to login (replace email/password):
+    ```python
+    import garth
+    garth.login("your@email.com", "your_password")
     ```
-    Date	Activity Name	Distance (km)	Duration (min)	Avg Pace (min/km)	Avg HR	Max HR	Calories	Avg Cadence	Elevation Gain (m)	Activity Type
-    ```
-* If you're testing locally, then share and give editor access to your Google Cloud Service Account.
+    *This creates a `~/.garth` directory with your session tokens.*
+3.  Zip and encode the tokens:
+    *   **Mac/Linux:**
+        ```bash
+        cd ~/.garth
+        zip -r garmin_tokens.zip .
+        base64 garmin_tokens.zip > garmin_tokens_base64.txt
+        ```
+        *Copy the contents of `garmin_tokens_base64.txt`.*
+    *   **Windows (PowerShell):**
+        Compress the contents of `%UserProfile%\.garth` to `garmin_tokens.zip`.
+        ```powershell
+        [Convert]::ToBase64String([IO.File]::ReadAllBytes("garmin_tokens.zip")) | Set-Clipboard
+        ```
 
-# Set Up Google Cloud Credentials
+### 3. GitHub Secrets
+In your repository, go to **Settings > Secrets and variables > Actions** and add:
 
-* Go to Google Cloud Console
-* Create a new project (or use existing)
-* Enable Google Sheets API:
-
-    - Click "Enable APIs and Services"
-    - Search "Google Sheets API"
-    - Click Enable
-
-* Enable Google Drive API
-* Create Service Account:
-
-    - Go to "IAM & Admin" → "Service Accounts"
-    - Click "Create Service Account"
-    - Name it "garmin-gsheets-run-sync" → Click Create
-    - Skip optional steps → Click Done
-
-* Create Key:
-
-    - Click on the service account you just created
-    - Go to "Keys" tab
-    - "Add Key" → "Create new key" → JSON
-    - Save the JSON file (you'll need this!)
-
-* Share your Google Sheet:
-
-    - Open your "Garmin Data" sheet
-    - Click Share
-    - Add the service account email (looks like garmin-gsheets-run-sync@your-project.iam.- gserviceaccount.com)
-    - Give it "Editor" access
-
-* Push to github
-```
-cd garmin-gsheets-run-sync
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-```
-* On GitHub:
-
-    - Create a new repository called "garmin-gsheets-run-sync"
-    - Follow GitHub's instructions to push:
-
-* Add GitHub Secrets
-
-    - Go to your GitHub repository
-    - Click Settings → Secrets and variables → Actions
-    - Click New repository secret and add these four secrets:
-
-* Secret 1: GARMIN_EMAIL
-```
-Name: GARMIN_EMAIL
-Value: Your Garmin Connect email
-```
-
-* Secret 2: GARMIN_PASSWORD
-```
-Name: GARMIN_PASSWORD
-Value: Your Garmin Connect password
-```
-
-* Secret 3: GOOGLE_CREDENTIALS
-```
-Name: GOOGLE_CREDENTIALS
-Value: The entire contents of the JSON file you downloaded (copy & paste everything)
-```
-
-* Secret 4: SHEETS_ID
-```
-Name: SHEETS_ID
-Value: The unique ID number in your Garmin Data Google sheets, you can find it in the URL
-    https://docs.google.com/spreadsheets/d/[SHEETS_ID]/edit?gid=379328079
-```
-
-* Test It!
-
-    - Go to your repository
-    - Click Actions tab
-    - Click on "Garmin to Google Sheets Sync" workflow
-    - Click Run workflow → Run workflow (green button)
-    - Watch it run! Click on the running job to see logs
-    - Check your Google Sheet - you should see data appear!
-
-* Verify Scheduling
-    * The workflow is set to run automatically every day at 6 AM UTC. You can:
-
-    - Change the cron schedule in garmin-sync.yml
-    - Run manually anytime using "Run workflow" button
-    - Check the Actions tab to see run history
+| Secret Name | Value |
+|-------------|-------|
+| `GARMIN_TOKENS_BASE64` | The base64 string generated in Step 2. |
+| `GOOGLE_CREDENTIALS` | The content of your Google Service Account JSON file. |
+| `SHEET_ID` | The ID from your Google Sheet URL (e.g., `1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms`). |
 
 # Testing Locally
 
-* In your project, create a .env file, add it to .gitignore and add with your own credentials:
-```
-GARMIN_EMAIL=your@mail.com
-GARMIN_PASSWORD=yourpasswords
-SHEET_ID=get from Gsheets URL
-GOOGLE_CREDENTIALS={"type": "service_account","project_id": ...}
+1.  Create a `.env` file:
+    ```
+    GOOGLE_CREDENTIALS={"type": "service_account", ...}
+    SHEET_ID=your_sheet_id
+    ```
+2.  Ensure you have your tokens in `~/.garth` (from Step 2 above).
+3.  Run: `python sync_garmin.py`
+
+# Customization
+
+To sync more activities, change this line in `sync_garmin.py`:
+```python
+activities = garmin_client.get_activities(0, 50)  # Increase this number
 ```
