@@ -116,10 +116,10 @@ def main():
         print(f"❌ Failed to connect to Google Sheets: {e}")
         return
     
-    # Get existing dates to avoid duplicates
+    # Get existing activity IDs to avoid duplicates
     try:
         existing_data = sheet.get_all_values()
-        existing_dates = set()
+        existing_activity_ids = set()
         sheet_headers = []
 
         # Define default headers
@@ -147,11 +147,18 @@ def main():
                 sheet.update(range_name='A1', values=[sheet_headers])
                 print("✅ Updated sheet headers")
 
+        # Get the index of the 'Activity ID' column for de-duplication
+        try:
+            activity_id_col_index = sheet_headers.index('Activity ID')
+        except ValueError:
+            print("❌ 'Activity ID' column not found in sheet headers. Cannot de-duplicate.")
+            return
+
         if len(existing_data) > 1:  # If there's data beyond headers
             for row in existing_data[1:]:  # Skip header row
-                if row and row[0]:  # If date column exists
-                    existing_dates.add(row[0])
-        print(f"Found {len(existing_dates)} existing entries")
+                if len(row) > activity_id_col_index and row[activity_id_col_index]:
+                    existing_activity_ids.add(row[activity_id_col_index])
+        print(f"Found {len(existing_activity_ids)} existing activity IDs in the sheet.")
     except Exception as e:
         print(f"❌ Failed to read sheet data: {e}")
         return
@@ -160,13 +167,15 @@ def main():
     new_entries = 0
     for activity in activities:
         try:
-            # Parse activity date
-            activity_date = activity.get('startTimeLocal', '')[:10]  # Get YYYY-MM-DD
+            # Get activity ID for de-duplication check
+            activity_id = str(activity.get('activityId') or '')
             
             # Skip if already in sheet
-            if activity_date in existing_dates:
-                print(f"Skipping {activity_date} - already exists")
+            if activity_id in existing_activity_ids:
                 continue
+            
+            # Parse activity date
+            activity_date = activity.get('startTimeLocal', '')[:10]  # Get YYYY-MM-DD
             
             # Extract metrics
             activity_name = activity.get('activityName', 'Run')
