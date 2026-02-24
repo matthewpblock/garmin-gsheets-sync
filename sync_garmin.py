@@ -18,9 +18,16 @@ try:
     # This forces the library to use the already-resumed garth session
     garmin_client = Garmin()
     garmin_client.garth = garth.client
-    garmin_client.display_name = garth.client.username
     
-    # 3. Test the connection
+    # 3. Fetch the correct display name
+    # We need the actual display name (handle), not the email, for some API calls
+    try:
+        user_profile = garmin_client.get_social_profile()
+        garmin_client.display_name = user_profile['displayName']
+    except Exception:
+        # Fallback to environment variable if API call fails
+        garmin_client.display_name = os.environ.get('GARMIN_DISPLAY_NAME', garth.client.username)
+
     print(f"✅ Logged in as: {garmin_client.display_name}")
 
 except Exception as e:
@@ -284,10 +291,28 @@ def main():
                 # Fetch data
                 summary = garmin_client.get_user_summary(date_str)
                 hrv_data = garmin_client.get_hrv_status(date_str)
+                # Fetch data (Handle HRV separately as it might not exist for all devices)
+                summary = None
+                hrv_data = None
+                
+                try:
+                    summary = garmin_client.get_user_summary(date_str)
+                except Exception as e:
+                    print(f"   ⚠️ Could not fetch summary for {date_str}: {e}")
+                
+                try:
+                    hrv_data = garmin_client.get_hrv_status(date_str)
+                except Exception:
+                    # HRV data might not be available or supported
+                    pass
                 
                 if not summary:
                     print(f"   No summary data for {date_str}")
                     continue
+
+                # Safe extraction for sleep duration
+                sleep_sec = summary.get('sleepDuration')
+                sleep_hours = round(sleep_sec / 3600, 2) if sleep_sec else ''
 
                 row_data = [
                     date_str,
@@ -297,7 +322,7 @@ def main():
                     summary.get('averageStressLevel', ''),
                     summary.get('totalSteps', ''),
                     summary.get('sleepScore', ''),
-                    round(summary.get('sleepDuration', 0) / 3600, 2) if summary.get('sleepDuration') else ''
+                    sleep_hours
                 ]
                 
                 daily_sheet.append_row(row_data)

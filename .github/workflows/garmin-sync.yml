@@ -35,4 +35,5 @@ jobs:
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           SHEET_ID: ${{ secrets.SHEET_ID }}
+          GARMIN_DISPLAY_NAME: ${{ secrets.GARMIN_DISPLAY_NAME }}
         run: python sync_garmin.py

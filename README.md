@@ -61,6 +61,7 @@ In your repository, go to **Settings > Secrets and variables > Actions** and add
 | `GARMIN_TOKENS_BASE64` | The base64 string generated in Step 2. |
 | `GOOGLE_CREDENTIALS` | The content of your Google Service Account JSON file. |
 | `SHEET_ID` | The ID from your Google Sheet URL (e.g., `1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms`). |
+| `GARMIN_DISPLAY_NAME` | Your Garmin public handle. Required for daily stats. |
 
 # Testing Locally
 
@@ -68,6 +69,7 @@ In your repository, go to **Settings > Secrets and variables > Actions** and add
     ```
     GOOGLE_CREDENTIALS={"type": "service_account", ...}
     SHEET_ID=your_sheet_id
+    GARMIN_DISPLAY_NAME=MatthewBlock
     ```
 2.  Ensure you have your tokens in `~/.garth` (from Step 2 above).
 3.  Run: `python sync_garmin.py`
