@@ -288,9 +288,6 @@ def main():
                 continue
                 
             try:
-                # Fetch data
-                summary = garmin_client.get_user_summary(date_str)
-                hrv_data = garmin_client.get_hrv_status(date_str)
                 # Fetch data (Handle HRV separately as it might not exist for all devices)
                 summary = None
                 hrv_data = None
@@ -301,7 +298,7 @@ def main():
                     print(f"   ⚠️ Could not fetch summary for {date_str}: {e}")
                 
                 try:
-                    hrv_data = garmin_client.get_hrv_status(date_str)
+                    hrv_data = garmin_client.get_hrv_data(date_str)
                 except Exception:
                     # HRV data might not be available or supported
                     pass
