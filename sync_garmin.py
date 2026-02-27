@@ -291,9 +291,9 @@ def main():
                 if len(row) > date_col_idx and row[date_col_idx]:
                     daily_existing_dates.add(row[date_col_idx])
 
-        # Sync last 14 days (excluding today to ensure data is complete)
+        # Sync last 60 days (excluding today to ensure data is complete)
         today = datetime.now().date()
-        days_to_sync = [(today - timedelta(days=i)).isoformat() for i in range(1, 15)]
+        days_to_sync = [(today - timedelta(days=i)).isoformat() for i in range(1, 61)]
         
         new_daily_entries = 0
         for date_str in reversed(days_to_sync): # Process oldest to newest
