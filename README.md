@@ -5,11 +5,11 @@ Automatically syncs Garmin Connect activities and daily metrics to Google Sheets
 # What this project does
 
 *   **Activities:** Fetches your last 50 activities (Running, Cycling, Swimming, etc.)
-*   **Daily Metrics:** Syncs Resting HR, HRV, Stress, Steps, and Sleep data
+*   **Daily Metrics:** Syncs Resting HR, HRV (ms), Stress (Avg/Max), Steps, Sleep Score, and Sleep Duration
 *   **Rich Data:** Extracts detailed metrics including:
     *   Distance, Duration, Pace
     *   Heart Rate (Avg, Max) & HR Zones (1-5)
-    *   VO2 Max & Stress Levels
+    *   VO2 Max & Stress Levels (Avg, Max, Start, End, Diff)
     *   Calories, Cadence, Elevation
 *   **Smart Sync:** Avoids duplicates by checking existing Activity IDs
 *   **Automation:** Runs automatically every day
