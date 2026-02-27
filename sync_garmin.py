@@ -316,22 +316,47 @@ def main():
                     # HRV data might not be available or supported
                     pass
                 
+                # Fetch Sleep Data explicitly
+                sleep_data = None
+                try:
+                    sleep_data = garmin_client.get_sleep_data(date_str)
+                except Exception:
+                    pass
+                
                 if not summary:
                     print(f"   No summary data for {date_str}")
                     continue
 
-                # Safe extraction for sleep duration
-                sleep_sec = summary.get('sleepDuration')
+                # Extract Sleep Data (prefer specific sleep endpoint, fall back to summary)
+                sleep_sec = None
+                sleep_score = None
+
+                if sleep_data and 'dailySleepDTO' in sleep_data:
+                    dto = sleep_data['dailySleepDTO']
+                    sleep_sec = dto.get('sleepTimeSeconds')
+                    sleep_score = dto.get('sleepScores', {}).get('overall', {}).get('value')
+                
+                # Fallback to summary if missing
+                if not sleep_sec:
+                    sleep_sec = summary.get('sleepDuration')
+                if not sleep_score:
+                    sleep_score = summary.get('sleepScore')
+
                 sleep_hours = round(sleep_sec / 3600, 2) if sleep_sec else ''
+
+                # Extract HRV (handle nesting)
+                hrv_val = ''
+                if hrv_data:
+                    hrv_val = hrv_data.get('lastNightAvg') or hrv_data.get('hrvSummary', {}).get('lastNightAvg', '')
 
                 daily_record = {
                     'Date': date_str,
                     'Resting HR': summary.get('restingHeartRate', ''),
-                    'HRV (ms)': hrv_data.get('lastNightAvg', '') if hrv_data else '',
+                    'HRV (ms)': hrv_val,
                     'Max Stress': summary.get('maxStressLevel', ''),
                     'Avg Stress': summary.get('averageStressLevel', ''),
                     'Total Steps': summary.get('totalSteps', ''),
-                    'Sleep Score': summary.get('sleepScore', ''),
+                    'Sleep Score': sleep_score or '',
                     'Sleep Duration (hr)': sleep_hours
                 }
                 
