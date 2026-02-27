@@ -264,19 +264,32 @@ def main():
     # ---------------------------------------------------------
     print("\nStarting Daily Metrics sync...")
     try:
-        daily_headers = ['Date', 'Resting HR', 'HRV (ms)', 'Max Stress', 'Avg Stress', 'Total Steps', 'Sleep Score', 'Sleep Duration (hr)']
+        default_daily_headers = ['Date', 'Resting HR', 'HRV (ms)', 'Max Stress', 'Avg Stress', 'Total Steps', 'Sleep Score', 'Sleep Duration (hr)']
         daily_data = daily_sheet.get_all_values()
+        daily_sheet_headers = []
+        daily_existing_dates = set()
         
-        # Initialize headers if empty
-        if not daily_data:
-            daily_sheet.append_row(daily_headers)
-            daily_existing_dates = set()
+        # Check if sheet is empty or has empty header row
+        if not daily_data or (len(daily_data) > 0 and not any(daily_data[0])):
+            print("⚠️ Daily Metrics sheet is empty. Initializing...")
+            daily_sheet.clear()
+            daily_sheet.append_row(default_daily_headers)
+            daily_sheet_headers = default_daily_headers
         else:
-            # Check if headers match, update if needed (simplified for now)
-            if daily_data[0] != daily_headers:
-                # For now, just ensure row 1 is correct if it's a new sheet
-                pass
-            daily_existing_dates = set(row[0] for row in daily_data[1:] if row)
+            daily_sheet_headers = daily_data[0]
+            # Check for missing headers
+            missing_daily_headers = [h for h in default_daily_headers if h not in daily_sheet_headers]
+            if missing_daily_headers:
+                print(f"⚠️ Found missing headers in Daily Metrics: {missing_daily_headers}")
+                daily_sheet_headers.extend(missing_daily_headers)
+                daily_sheet.update(range_name='A1', values=[daily_sheet_headers])
+                print("✅ Updated Daily Metrics headers")
+            
+            # Get existing dates
+            date_col_idx = daily_sheet_headers.index('Date') if 'Date' in daily_sheet_headers else 0
+            for row in daily_data[1:]:
+                if len(row) > date_col_idx and row[date_col_idx]:
+                    daily_existing_dates.add(row[date_col_idx])
 
         # Sync last 14 days (excluding today to ensure data is complete)
         today = datetime.now().date()
@@ -311,16 +324,19 @@ def main():
                 sleep_sec = summary.get('sleepDuration')
                 sleep_hours = round(sleep_sec / 3600, 2) if sleep_sec else ''
 
-                row_data = [
-                    date_str,
-                    summary.get('restingHeartRate', ''),
-                    hrv_data.get('lastNightAvg', '') if hrv_data else '',
-                    summary.get('maxStressLevel', ''),
-                    summary.get('averageStressLevel', ''),
-                    summary.get('totalSteps', ''),
-                    summary.get('sleepScore', ''),
-                    sleep_hours
-                ]
+                daily_record = {
+                    'Date': date_str,
+                    'Resting HR': summary.get('restingHeartRate', ''),
+                    'HRV (ms)': hrv_data.get('lastNightAvg', '') if hrv_data else '',
+                    'Max Stress': summary.get('maxStressLevel', ''),
+                    'Avg Stress': summary.get('averageStressLevel', ''),
+                    'Total Steps': summary.get('totalSteps', ''),
+                    'Sleep Score': summary.get('sleepScore', ''),
+                    'Sleep Duration (hr)': sleep_hours
+                }
+                
+                # Map to headers
+                row_data = [daily_record.get(h, "") for h in daily_sheet_headers]
                 
                 daily_sheet.append_row(row_data)
                 print(f"✅ Added Daily Stats: {date_str}")
